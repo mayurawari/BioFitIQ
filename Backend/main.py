@@ -10,7 +10,7 @@ os.environ["GOOGLE_API_KEY"] = os.getenv("GOOGLE_API_KEY")
 app = FastAPI(title = "Welocome to BIOfitIQ Backend", version = "1.0.0")
 
 origins = [
-    "https://bio-fit-iq.vercel.app/",
+    "https://bio-fit-iq.vercel.app",
     "https://biofitiq.onrender.com",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
