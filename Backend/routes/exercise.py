@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from LLM import llm
-from langchain_core.output_parsers import StrOutputParser,JsonOutputParser 
+from langchain_core.output_parsers import StrOutputParser,JsonOutputParser
+from app.utils.parsing import _safe_json  
 import requests
 
 router = APIRouter(tags = ["Excercise"], prefix = "/exercise")
@@ -19,11 +20,7 @@ def generate_excercise_summary(excercise_data: object):
     
     response = llm.llm.invoke(prompt)
     
-    summary = strparser.parse(response.content)
-    
-    # print(summary)
-    
-    return summary
+    return strparser.parse(getattr(response, "content", str(response)).strip())
 
 #  -- Agent-2 -- # 
 
@@ -72,11 +69,10 @@ def generate_data_to_json(excercise_data : str, original_data: object):
     
     response = llm.llm.invoke(prompt)
     
-    
-    
-    json_data = jsonparser.parse(response.content)
-    
-    return json_data
+    try:
+        return _safe_json(getattr(response, "content", str(response)))
+    except Exception:
+        return {"bodyPart": "", "exercises": []}
 
 @router.get("/bybodypart/{body_part}")
 def get_excercises_by_body_part(body_part:str, offset: int = 0, limit: int = 10):

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from LLM import llm
 from langchain_core.output_parsers import StrOutputParser, JsonOutputParser
+from app.utils.parsing import _safe_json 
 import requests
 
 router = APIRouter(tags=["Equipment"], prefix="/equipment")
@@ -18,7 +19,8 @@ def generate_equipment_summary(exercise_data: object):
         f"{exercise_data}\nSummary:"
     )
     response = llm.llm.invoke(prompt)
-    return strparser.parse(response.content)
+    # normalize to clean string for predictable frontend rendering
+    return strparser.parse(getattr(response, "content", str(response)).strip())
 
 
 # -------- Agent 2: Convert Data to JSON Schema -------- #
@@ -68,7 +70,11 @@ def convert_equipment_to_json(summary: str, original_data: object):
     Original: {original_data}
     """
     response = llm.llm.invoke(prompt)
-    return jsonparser.parse(response.content)
+    # robust JSON parse with stable fallback so the frontend schema never breaks
+    try:
+        return _safe_json(getattr(response, "content", str(response)))
+    except Exception:
+        return {"equipment": "", "exercises": []}
 
 
 # -------- Main Route: Get Exercises By Equipment -------- #

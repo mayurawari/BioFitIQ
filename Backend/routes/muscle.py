@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 import requests
 from LLM import llm
+from app.utils.parsing import _safe_json
 from langchain_core.output_parsers import StrOutputParser, JsonOutputParser
 
 router = APIRouter(tags=["Muscle"], prefix="/muscle")
@@ -18,7 +19,7 @@ def generate_muscle_summary(exercise_data: object):
         f"{exercise_data}\nSummary:"
     )
     response = llm.llm.invoke(prompt)
-    return strparser.parse(response.content)
+    return strparser.parse(getattr(response, "content", str(response)).strip())
 
 
 # ---------------- Agent 2: JSON Converter ---------------- #
@@ -68,7 +69,10 @@ def convert_muscle_to_json(summary: str, original_data: object):
     Original: {original_data}
     """
     response = llm.llm.invoke(prompt)
-    return jsonparser.parse(response.content)
+    try:
+        return _safe_json(getattr(response, "content", str(response)))
+    except Exception:
+        return {"muscle": "", "exercises": []}
 
 
 # ---------------- Endpoint: Get Exercises By Muscle ---------------- #
